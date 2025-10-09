@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargar Libros - Biblioteca Digital</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <style>
+        /* Variables de colores */
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent1: #FFD166;
+            --accent2: #06D6A0;
+            --accent3: #118AB2;
+            --dark: #073B4C;
+            --light: #F8F9FA;
+            --gray: #E9ECEF;
+        }
+
+        /* Estilos generales */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header y navegación */
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--accent3));
+            padding: 1rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .logo h1 {
+            color: white;
+            font-size: 1.8rem;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover,
+        nav a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .search-bar {
+            display: flex;
+            background: white;
+            border-radius: 30px;
+            overflow: hidden;
+            padding: 0.5rem;
+        }
+
+        .search-bar input {
+            border: none;
+            padding: 0.5rem 1rem;
+            outline: none;
+            width: 200px;
+        }
+
+        .search-bar button {
+            background: var(--accent2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .search-bar button:hover {
+            background: var(--secondary);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            padding: 3rem 0;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+            background-size: cover;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Área de carga */
+        .upload-section {
+            padding: 3rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--dark);
+            font-size: 2rem;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: "";
+            display: block;
+            width: 80px;
+            height: 4px;
+            background: var(--primary);
+            margin: 0.5rem auto;
+            border-radius: 2px;
+        }
+
+        .upload-area {
+            background: white;
+            border: 3px dashed var(--secondary);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 2rem;
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            background: rgba(78, 205, 196, 0.1);
+            border-color: var(--accent3);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text h3 {
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .upload-text p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .browse-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .browse-btn:hover {
+            background: var(--accent3);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-info {
+            background: var(--gray);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .file-info.active {
+            display: block;
+        }
+
+        .file-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .file-name {
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        .file-size {
+            color: #666;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .preview-btn {
+            background: var(--accent3);
+            color: white;
+        }
+
+        .remove-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Libros cargados recientemente */
+        .recent-uploads {
+            padding: 3rem 0;
+            background: var(--gray);
+        }
+
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .book-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .book-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .book-cover {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .book-cover::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.3));
+        }
+
+        .book-info {
+            padding: 1.5rem;
+        }
+
+        .book-info h3 {
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+            font-size: 1.2rem;
+        }
+
+        .book-info p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .book-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .read-btn {
+            display: block;
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--accent3);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+
+        .read-btn:hover {
+            background: var(--dark);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #ccc;
+        }
+
+        /* Modal del lector PDF */
+        .reader-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .reader-header {
+            width: 95%;
+            max-width: 1200px;
+            background: var(--dark);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .reader-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .reader-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .reader-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .reader-btn:hover {
+            background: var(--accent2);
+        }
+
+        .close-reader {
+            background: var(--primary);
+        }
+
+        .reader-container {
+            width: 95%;
+            max-width: 1200px;
+            height: 85vh;
+            background: white;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #pdf-viewer {
+            flex: 1;
+            overflow: auto;
+            background: #f5f5f5;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .pdf-page {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: white;
+        }
+
+        .pdf-page canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .reader-footer {
+            background: var(--gray);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .page-btn {
+            background: var(--dark);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .page-btn:hover {
+            background: var(--accent3);
+        }
+
+        .page-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            margin: 0 1rem;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: var(--accent2);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--accent3);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: var(--primary);
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 10px;
+            margin: 1rem;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-left: 1rem;
+        }
+
+        .zoom-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .zoom-btn:hover {
+            background: var(--accent2);
+        }
+
+        .zoom-level {
+            color: white;
+            font-size: 0.9rem;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 3rem 0 1rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-column h3 {
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .footer-column h3::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: var(--accent2);
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column ul li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-column a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-column a:hover {
+            color: var(--accent2);
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-icons a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .social-icons a:hover {
+            background: var(--accent2);
+            transform: translateY(-5px);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            nav ul {
+                gap: 1rem;
+            }
+
+            .hero h2 {
+                font-size: 2rem;
+            }
+
+            .books-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+
+            .reader-header,
+            .reader-footer {
+                padding: 1rem;
+            }
+
+            .file-details {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+
+            .file-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .action-btn {
+                width: 100%;
+            }
+
+            .reader-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .zoom-controls {
+                margin-left: 0;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-book-open"></i>
+                    <h1>Biblioteca Digital</h1>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="index.html">Inicio</a></li>
+                        <li><a href="explorar.html">Explorar</a></li>
+                        <li><a href="#" class="active">Cargar</a></li>
+                        <li><a href="#">Favoritos</a></li>
+                        <li><a href="#">Contacto</a></li>
+                    </ul>
+                </nav>
+                <div class="search-bar">
+                    <input type="text" placeholder="Buscar libros...">
+                    <button><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2>Cargar Tus Libros Digitales</h2>
+                <p>Sube tus archivos PDF y visualízalos directamente en el navegador. Solo durante esta sesión.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Área de carga -->
+    <section class="upload-section">
+        <div class="container">
+            <h2 class="section-title">Cargar Nuevo Libro</h2>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">
+                    <h3>Arrastra y suelta tu archivo PDF aquí</h3>
+                    <p>o haz clic para buscar en tu dispositivo</p>
+                    <button class="browse-btn">Seleccionar Archivo</button>
+                    <input type="file" id="fileInput" accept=".pdf">
+                </div>
+            </div>
+
+            <div class="file-info" id="fileInfo">
+                <div class="file-details">
+                    <div>
+                        <div class="file-name" id="fileName">Nombre del archivo</div>
+                        <div class="file-size" id="fileSize">Tamaño del archivo</div>
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button class="action-btn preview-btn" id="previewBtn">Vista Previa</button>
+                    <button class="action-btn remove-btn" id="removeBtn">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Libros cargados recientemente -->
+    <section class="recent-uploads">
+        <div class="container">
+            <h2 class="section-title">Libros Cargados Recientemente</h2>
+
+            <div class="books-grid" id="recentBooksGrid">
+                <!-- Los libros cargados aparecerán aquí dinámicamente -->
+                <div class="empty-state" id="emptyState">
+                    <i class="fas fa-book-open"></i>
+                    <h3>No hay libros cargados</h3>
+                    <p>Los libros que cargues aparecerán aquí durante esta sesión</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>Biblioteca Digital</h3>
+                    <p>Tu portal de acceso al conocimiento y la cultura a través de los libros digitales.</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="footer-column">
+                    <h3>Enlaces Rápidos</h3>
+                    <ul>
+                        <li><a href="index.html">Inicio</a></li>
+                        <li><a href="explorar.html">Explorar Biblioteca</a></li>
+                        <li><a href="#">Cargar Libros</a></li>
+                        <li><a href="#">Favoritos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Recursos</h3>
+                    <ul>
+                        <li><a href="#">Guías de Estudio</a></li>
+                        <li><a href="#">Material Didáctico</a></li>
+                        <li><a href="#">Revistas Escolares</a></li>
+                        <li><a href="#">Bibliografía Recomendada</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Contacto</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> Colegio Ejemplo, Ciudad</li>
+                        <li><i class="fas fa-phone"></i> (123) 456-7890</li>
+                        <li><i class="fas fa-envelope"></i> biblioteca@colegio.edu</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2023 Biblioteca Digital. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal del lector PDF -->
+    <div class="reader-modal" id="readerModal">
+        <div class="reader-header">
+            <div class="reader-title">Leyendo: <span id="currentBookTitle">Título del Libro</span></div>
+            <div class="reader-controls">
+                <div class="zoom-controls">
+                    <button class="zoom-btn" id="zoomOut">-</button>
+                    <span class="zoom-level" id="zoomLevel">100%</span>
+                    <button class="zoom-btn" id="zoomIn">+</button>
+                </div>
+                <button class="reader-btn" id="themeToggle"><i class="fas fa-adjust"></i></button>
+                <button class="reader-btn close-reader" id="closeReader"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="reader-container">
+            <div id="pdf-viewer">
+                <div class="loading" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    <p>Cargando PDF...</p>
+                </div>
+                <div class="error-message" id="errorMessage">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <h3>Error al cargar el PDF</h3>
+                    <p id="errorText">No se pudo cargar el archivo PDF. Por favor, intenta con otro archivo.</p>
+                    <button class="browse-btn" onclick="closeReader()">Cerrar</button>
+                </div>
+                <!-- Las páginas del PDF se insertarán aquí dinámicamente -->
+            </div>
+            <div class="reader-footer">
+                <div class="page-controls">
+                    <button class="page-btn" id="prevPage"><i class="fas fa-chevron-left"></i></button>
+                    <span id="pageInfo">Página <span id="currentPage">1</span> de <span id="totalPages">1</span></span>
+                    <button class="page-btn" id="nextPage"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress" id="readingProgress"></div>
+                </div>
+                <div class="page-controls">
+                    <button class="reader-btn" id="downloadBtn" title="Descargar">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configurar PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // Variables globales
+        let currentPdf = null;
+        let currentFile = null;
+        let uploadedBooks = [];
+        let currentPage = 1;
+        let totalPages = 1;
+        let zoomLevel = 1.0;
+        let isDarkMode = false;
+
+        // Elementos del DOM
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const previewBtn = document.getElementById('previewBtn');
+        const removeBtn = document.getElementById('removeBtn');
+        const recentBooksGrid = document.getElementById('recentBooksGrid');
+        const emptyState = document.getElementById('emptyState');
+        const readerModal = document.getElementById('readerModal');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const pdfViewer = document.getElementById('pdf-viewer');
+
+        // Eventos de carga de archivos
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Manejar la selección de archivos
+        function handleFileSelect(e) {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            // Verificar que sea un archivo PDF
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                alert('Por favor, selecciona un archivo PDF válido.');
+                return;
+            }
+
+            currentFile = file;
+
+            // Mostrar información del archivo
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.add('active');
+
+            // Agregar a la lista de libros cargados
+            addToUploadedBooks(file);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Agregar libro a la lista de cargados
+        function addToUploadedBooks(file) {
+            const bookId = 'book-' + Date.now();
+            const book = {
+                id: bookId,
+                name: file.name.replace('.pdf', ''),
+                file: file,
+                size: file.size,
+                uploadTime: new Date()
+            };
+
+            uploadedBooks.unshift(book);
+            updateRecentBooksGrid();
+
+            // Limpiar el área de carga
+            fileInput.value = '';
+            fileInfo.classList.remove('active');
+            currentFile = null;
+        }
+
+        // Actualizar la cuadrícula de libros recientes
+        function updateRecentBooksGrid() {
+            if (uploadedBooks.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            let html = '';
+            uploadedBooks.forEach(book => {
+                const color = getRandomColor();
+                html += `
+                    <div class="book-card" data-book-id="${book.id}">
+                        <div class="book-cover" style="background: ${color};">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="book-info">
+                            <h3>${book.name}</h3>
+                            <p>Archivo cargado</p>
+                            <p class="book-meta">
+                                <span>${formatFileSize(book.size)}</span>
+                                <span>${book.uploadTime.toLocaleTimeString()}</span>
+                            </p>
+                            <button class="read-btn" data-book-id="${book.id}">Leer Libro</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            recentBooksGrid.innerHTML = html;
+
+            // Agregar event listeners a los botones de leer
+            document.querySelectorAll('.read-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const bookId = btn.getAttribute('data-book-id');
+                    const book = uploadedBooks.find(b => b.id === bookId);
+                    if (book) {
+                        openBookReader(book);
+                    }
+                });
+            });
+        }
+
+        function getRandomColor() {
+            const colors = [
+                'var(--primary)',
+                'var(--secondary)',
+                'var(--accent1)',
+                'var(--accent2)',
+                'var(--accent3)'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Botones de acción
+        previewBtn.addEventListener('click', () => {
+            if (currentFile) {
+                const tempBook = {
+                    id: 'temp',
+                    name: currentFile.name.replace('.pdf', ''),
+                    file: currentFile
+                };
+                openBookReader(tempBook);
+            }
+        });
+
+        removeBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            fileInfo.classList.remove('active');
+            currentFile = null;
+        });
+
+        // Funcionalidad del lector PDF
+        function openBookReader(book) {
+            const readerTitle = document.getElementById('currentBookTitle');
+            readerTitle.textContent = book.name;
+            readerModal.style.display = 'flex';
+
+            // Mostrar indicador de carga y ocultar errores
+            loadingIndicator.style.display = 'flex';
+            errorMessage.style.display = 'none';
+
+            // Cargar el PDF
+            loadPDF(book.file);
+        }
+
+        async function loadPDF(file) {
+            try {
+                // Limpiar cualquier PDF anterior
+                pdfViewer.innerHTML = '';
+                pdfViewer.appendChild(loadingIndicator);
+                pdfViewer.appendChild(errorMessage);
+
+                // Crear URL del archivo
+                const fileURL = URL.createObjectURL(file);
+
+                console.log('Cargando PDF desde:', fileURL);
+
+                // Cargar el PDF
+                const loadingTask = pdfjsLib.getDocument(fileURL);
+                currentPdf = await loadingTask.promise;
+
+                totalPages = currentPdf.numPages;
+                currentPage = 1;
+
+                // Actualizar información de página
+                updatePageInfo();
+
+                // Ocultar indicador de carga
+                loadingIndicator.style.display = 'none';
+
+                // Renderizar la primera página
+                await renderPage(currentPage);
+
+                // Configurar evento de descarga
+                document.getElementById('downloadBtn').onclick = () => {
+                    const link = document.createElement('a');
+                    link.href = fileURL;
+                    link.download = file.name;
+                    link.click();
+                };
+
+            } catch (error) {
+                console.error('Error al cargar PDF:', error);
+                showError('Error al cargar el archivo PDF: ' + error.message);
+            }
+        }
+
+        async function renderPage(pageNum) {
+            try {
+                // Obtener la página
+                const page = await currentPdf.getPage(pageNum);
+
+                // Crear canvas para la página
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Configurar viewport
+                const viewport = page.getViewport({ scale: zoomLevel });
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+
+                // Crear contenedor para la página
+                const pageContainer = document.createElement('div');
+                pageContainer.className = 'pdf-page';
+                pageContainer.appendChild(canvas);
+
+                // Agregar al visor
+                pdfViewer.appendChild(pageContainer);
+
+                // Renderizar la página
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                await page.render(renderContext).promise;
+
+                // Actualizar información de página
+                updatePageInfo();
+
+            } catch (error) {
+                console.error('Error al renderizar página:', error);
+                throw error;
+            }
+        }
+
+        function updatePageInfo() {
+            document.getElementById("currentPage").textContent = currentPage;
+            document.getElementById("totalPages").textContent = totalPages;
+
+            // Calcular progreso
+            const progress = Math.round((currentPage / totalPages) * 100);
+            document.getElementById("readingProgress").style.width = progress + '%';
+
+            // Actualizar zoom
+            document.getElementById("zoomLevel").textContent = Math.round(zoomLevel * 100) + '%';
+
+            // Actualizar estado de botones
+            document.getElementById("prevPage").disabled = currentPage <= 1;
+            document.getElementById("nextPage").disabled = currentPage >= totalPages;
+        }
+
+        function showError(message) {
+            loadingIndicator.style.display = 'none';
+            errorMessage.style.display = 'block';
+            errorText.textContent = message;
+        }
+
+        // Controles del lector
+        document.getElementById('closeReader').addEventListener('click', closeReader);
+
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            if (zoomLevel < 3.0) {
+                zoomLevel += 0.1;
+                reloadCurrentPage();
+            }
+        });
+
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            if (zoomLevel > 0.5) {
+                zoomLevel -= 0.1;
+                reloadCurrentPage();
+            }
+        });
+
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            const viewer = document.getElementById('pdf-viewer');
+            if (isDarkMode) {
+                viewer.style.background = '#2c3e50';
+            } else {
+                viewer.style.background = '#f5f5f5';
+            }
+        });
+
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                reloadCurrentPage();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                reloadCurrentPage();
+            }
+        });
+
+        async function reloadCurrentPage() {
+            try {
+                // Limpiar visor
+                pdfViewer.innerHTML = '';
+                pdfViewer.appendChild(loadingIndicator);
+                pdfViewer.appendChild(errorMessage);
+                loadingIndicator.style.display = 'flex';
+
+                // Renderizar página actual
+                await renderPage(currentPage);
+
+                loadingIndicator.style.display = 'none';
+            } catch (error) {
+                console.error('Error al recargar página:', error);
+                showError('Error al cargar la página: ' + error.message);
+            }
+        }
+
+        function closeReader() {
+            readerModal.style.display = 'none';
+            if (currentPdf) {
+                currentPdf.destroy();
+                currentPdf = null;
+            }
+            // Liberar URL del objeto
+            if (currentFile) {
+                try {
+                    URL.revokeObjectURL(currentFile);
+                } catch (e) {
+                    console.warn('No se pudo liberar la URL:', e);
+                }
+            }
+            // Resetear variables
+            currentPage = 1;
+            zoomLevel = 1.0;
+        }
+
+        // Cerrar modal al hacer clic fuera del contenido
+        window.addEventListener('click', (e) => {
+            if (e.target === readerModal) {
+                closeReader();
+            }
+        });
+
+        // Navegación con teclado
+        document.addEventListener('keydown', (e) => {
+            if (readerModal.style.display === 'flex') {
+                if (e.key === 'ArrowLeft') {
+                    document.getElementById('prevPage').click();
+                } else if (e.key === 'ArrowRight') {
+                    document.getElementById('nextPage').click();
+                } else if (e.key === 'Escape') {
+                    closeReader();
+                }
+            }
+        });
+
+        // Inicializar
+        updateRecentBooksGrid();
+
+        // Verificación final de dependencias
+        window.addEventListener('load', function () {
+            if (typeof pdfjsLib === 'undefined') {
+                console.error('PDF.js no se cargó correctamente');
+                alert('Error: La biblioteca PDF.js no se cargó correctamente. Por favor, verifica tu conexión a internet.');
+            } else {
+                console.log('PDF.js está listo para usar');
+            }
+        });
+    </script>
+</body>
+
+</html>
